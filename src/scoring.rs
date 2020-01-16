@@ -339,7 +339,7 @@ fn n_ck(n: usize, k: usize) -> u64 {
 
 impl Estimator for SpatialPattern {
     fn estimate(&mut self, token: &str) -> u64 {
-        let (starts, degree) = if ["qwerty", "dvorak"].contains(&self.graph.as_str()) {
+        let (starts, degree) = if ["qwerty", "dvorak"].contains(&self.graph) {
             (*KEYBOARD_STARTING_POSITIONS, *KEYBOARD_AVERAGE_DEGREE)
         } else {
             (*KEYPAD_STARTING_POSITIONS, *KEYPAD_AVERAGE_DEGREE)
@@ -453,10 +453,10 @@ impl Estimator for DatePattern {
         let year_space = cmp::max((self.year - *REFERENCE_YEAR).abs(), MIN_YEAR_SPACE);
         let mut guesses = year_space as u64 * 365;
         // add factor of 4 for separator selection (one of ~4 choices)
-        if !self.separator.is_empty() {
+        if self.separator.is_some() {
             guesses *= 4;
         }
-        guesses as u64
+        guesses
     }
 }
 
@@ -829,7 +829,7 @@ mod tests {
     #[test]
     fn test_date_guesses() {
         let mut p = DatePatternBuilder::default()
-            .separator("".to_string())
+            .separator(None)
             .year(1923)
             .month(1)
             .day(1)
@@ -845,7 +845,7 @@ mod tests {
     #[test]
     fn test_date_guesses_recent_years_assume_min_year_space() {
         let mut p = DatePatternBuilder::default()
-            .separator("/".to_string())
+            .separator(Some('/'))
             .year(2010)
             .month(1)
             .day(1)
@@ -859,7 +859,7 @@ mod tests {
     #[allow(clippy::clone_on_copy)]
     fn test_spatial_guesses_no_turns_or_shifts() {
         let mut p = SpatialPatternBuilder::default()
-            .graph("qwerty".to_string())
+            .graph("qwerty")
             .turns(1)
             .shifted_count(0)
             .build()
@@ -875,7 +875,7 @@ mod tests {
     #[allow(clippy::clone_on_copy)]
     fn test_spatial_guesses_adds_for_shifted_keys() {
         let mut p = SpatialPatternBuilder::default()
-            .graph("qwerty".to_string())
+            .graph("qwerty")
             .turns(1)
             .shifted_count(2)
             .build()
@@ -892,7 +892,7 @@ mod tests {
     #[allow(clippy::clone_on_copy)]
     fn test_spatial_guesses_doubles_when_all_shifted() {
         let mut p = SpatialPatternBuilder::default()
-            .graph("qwerty".to_string())
+            .graph("qwerty")
             .turns(1)
             .shifted_count(6)
             .build()
@@ -909,7 +909,7 @@ mod tests {
     #[allow(clippy::clone_on_copy)]
     fn test_spatial_guesses_accounts_for_turn_positions_directions_and_start_keys() {
         let mut p = SpatialPatternBuilder::default()
-            .graph("qwerty".to_string())
+            .graph("qwerty")
             .turns(3)
             .shifted_count(0)
             .build()

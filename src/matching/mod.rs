@@ -317,7 +317,7 @@ const SHIFTED_CHARS: [char; 49] = [
 fn spatial_match_helper(
     password: &str,
     graph: &HashMap<char, Vec<Option<&str>>>,
-    graph_name: &str,
+    graph_name: &'static str,
 ) -> Vec<Match> {
     let mut matches = Vec::new();
     let password_len = password.chars().count();
@@ -378,7 +378,7 @@ fn spatial_match_helper(
                     // Don't consider length 1 or 2 chains
                     let pattern = MatchPattern::Spatial(
                         SpatialPatternBuilder::default()
-                            .graph(graph_name.to_string())
+                            .graph(graph_name)
                             .turns(turns)
                             .shifted_count(shifted_count)
                             .build()
@@ -689,7 +689,6 @@ impl Matcher for DateMatch {
                 let best_candidate = candidates.iter().min_by_key(|&c| metric(c)).unwrap();
                 let pattern = MatchPattern::Date(
                     DatePatternBuilder::default()
-                        .separator(String::new())
                         .year(best_candidate.0)
                         .month(best_candidate.1)
                         .day(best_candidate.2)
@@ -733,7 +732,7 @@ impl Matcher for DateMatch {
                                 captures[3].parse().unwrap(),
                                 captures[5].parse().unwrap(),
                             ),
-                            captures[2].to_string(),
+                            captures[2].chars().next(),
                         )
                     };
                     if let Some(ymd) = ymd {
@@ -1453,9 +1452,18 @@ mod tests {
 
     #[test]
     fn test_date_matching_with_various_separators() {
-        let separators = ["", " ", "-", "/", "\\", "_", "."];
+        let separators = [
+            None,
+            Some(' '),
+            Some('-'),
+            Some('/'),
+            Some('\\'),
+            Some('_'),
+            Some('.'),
+        ];
         for sep in &separators {
-            let password = format!("13{}2{}1921", sep, sep);
+            let sep_string = sep.map(|s| s.to_string()).unwrap_or("".to_string());
+            let password = format!("13{}2{}1921", sep_string, sep_string);
             let matches = (matching::DateMatch {}).get_matches(&password, &HashMap::new());
             let m = matches.iter().find(|m| m.token == password).unwrap();
             assert_eq!(m.i, 0);
@@ -1468,7 +1476,7 @@ mod tests {
             assert_eq!(p.year, 1921);
             assert_eq!(p.month, 2);
             assert_eq!(p.day, 13);
-            assert_eq!(p.separator, sep.to_string());
+            assert_eq!(p.separator, *sep);
         }
     }
 
@@ -1488,7 +1496,7 @@ mod tests {
         assert_eq!(p.year, Local::today().year());
         assert_eq!(p.month, 11);
         assert_eq!(p.day, 15);
-        assert_eq!(p.separator, "".to_string());
+        assert_eq!(p.separator, None);
     }
 
     #[test]
@@ -1506,7 +1514,7 @@ mod tests {
                 panic!("Wrong match pattern")
             };
             assert_eq!(p.year, year);
-            assert_eq!(p.separator, "".to_string());
+            assert_eq!(p.separator, None);
         }
         for &(day, month, year) in &test_data {
             let password = format!("{}.{}.{}", year, month, day);
@@ -1520,7 +1528,7 @@ mod tests {
                 panic!("Wrong match pattern")
             };
             assert_eq!(p.year, year);
-            assert_eq!(p.separator, ".".to_string());
+            assert_eq!(p.separator, Some('.'));
         }
     }
 
@@ -1539,7 +1547,7 @@ mod tests {
         assert_eq!(p.year, 2002);
         assert_eq!(p.month, 2);
         assert_eq!(p.day, 2);
-        assert_eq!(p.separator, "/".to_string());
+        assert_eq!(p.separator, Some('/'));
     }
 
     #[test]
@@ -1557,7 +1565,7 @@ mod tests {
         assert_eq!(p.year, 1991);
         assert_eq!(p.month, 1);
         assert_eq!(p.day, 1);
-        assert_eq!(p.separator, "/".to_string());
+        assert_eq!(p.separator, Some('/'));
     }
 
     #[test]
@@ -1575,7 +1583,7 @@ mod tests {
         assert_eq!(p.year, 1991);
         assert_eq!(p.month, 12);
         assert_eq!(p.day, 20);
-        assert_eq!(p.separator, "/".to_string());
+        assert_eq!(p.separator, Some('/'));
         let m = matches.iter().find(|m| &m.token == "1991.12.20").unwrap();
         assert_eq!(m.i, 6);
         assert_eq!(m.j, password.len() - 1);
@@ -1587,7 +1595,7 @@ mod tests {
         assert_eq!(p.year, 1991);
         assert_eq!(p.month, 12);
         assert_eq!(p.day, 20);
-        assert_eq!(p.separator, ".".to_string());
+        assert_eq!(p.separator, Some('.'));
     }
 
     #[test]
@@ -1605,7 +1613,7 @@ mod tests {
         assert_eq!(p.year, 1991);
         assert_eq!(p.month, 12);
         assert_eq!(p.day, 20);
-        assert_eq!(p.separator, "/".to_string());
+        assert_eq!(p.separator, Some('/'));
     }
 
     #[test]

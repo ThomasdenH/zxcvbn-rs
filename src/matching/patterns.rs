@@ -78,7 +78,7 @@ pub struct DictionaryPattern {
 #[cfg_attr(feature = "ser", derive(Serialize))]
 pub struct SpatialPattern {
     /// Name of the graph for which a spatial match has been found.
-    pub graph: String,
+    pub graph: &'static str,
     /// Number of turns in the matched spatial pattern.
     pub turns: usize,
     /// Number of shifts in the matched spatial pattern.
@@ -130,7 +130,7 @@ pub struct RegexPattern {
 #[cfg_attr(feature = "ser", derive(Serialize))]
 pub struct DatePattern {
     /// Separator of a date that was matched.
-    pub separator: String,
+    pub separator: Option<char>,
     /// Year that was matched.
     pub year: i32,
     /// Month that was matched.
